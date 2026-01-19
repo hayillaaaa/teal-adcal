@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>for dani</title>
+
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; image-rendering: pixelated; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: repeating-linear-gradient(
+    45deg,
+    #0f766e 0px,
+    #0f766e 12px,
+    #134e4a 12px,
+    #134e4a 24px
+  );
+  font-family: 'VT323', monospace;
+  color: #fcd5e0;
+  overflow-x: hidden;
+}
+
+/* ❄️ Snow */
+.snow { position: fixed; inset: 0; pointer-events: none; z-index: 1; }
+.snowflake {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: white;
+  animation: fall linear infinite;
+}
+@keyframes fall { to { transform: translateY(110vh); } }
+
+/* Screens */
+.screen {
+  position: fixed;
+  inset: 0;
+  background: rgba(4,47,46,0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  z-index: 5;
+  text-align: center;
+}
+
+/* PRESS START */
+.start-text {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 1.4rem;
+  text-shadow: 4px 4px #042f2e;
+  animation: blink 1s steps(1) infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+/* Password */
+.password-box {
+  background: #ccfbf1; 
+  color: #042f2e; 
+  padding: 24px; 
+  border: 6px solid #042f2e;
+  box-shadow: 10px 10px #042f2e;
+  width: 90%;
+  max-width: 320px;
+}
+.password-box input {
+  width: 100%;
+  padding: 12px;
+  font-size: 1.4rem;
+  margin-top: 12px;
+}
+.password-box button {
+  margin-top: 12px;
+  padding: 10px;
+  font-family: 'Press Start 2P', cursive;
+  background: #14b8a6; 
+  border: 4px solid #042f2e
+}
+.password-box p { display: none; color: red; }
+
+/* Main */
+.wrapper {
+  display: none;
+  max-width: 960px;
+  margin: auto;
+  padding: 20px;
+  z-index: 2;
+}
+
+h1 {
+  text-align: center;
+  font-family: 'Press Start 2P', cursive;
+  font-size: 1.1rem;
+  text-shadow: 4px 4px #042f2e;
+  margin-bottom: 20px;
+}
+
+/* Calendar */
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 14px;
+}
+
+.day {
+  position: relative;
+  padding-top: 100%;
+}
+
+.day-inner {
+  position: absolute;
+  inset: 0;
+  background: #14b8a6; 
+  border: 4px solid #042f2e;
+  box-shadow: 6px 6px #042f2e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Press Start 2P', cursive;
+  cursor: pointer;
+}
+
+/* Popup */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4,47,46,0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 4;
+}
+.overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.popup-card {
+  background: #ccfbf1; 
+  color: #042f2e;
+  width: 92%;
+  max-width: 480px;
+  padding: 24px;
+  border: 6px solid #042f2e; 
+  box-shadow: 10px 10px #042f2e;
+  transform: scale(0.6);
+  transition: transform 0.3s steps(6);
+  font-size: 1.4rem;
+}
+.overlay.active .popup-card { transform: scale(1); }
+
+.close-btn {
+  margin-bottom: 10px;
+  padding: 8px;
+  font-family: 'Press Start 2P', cursive;
+  background: #14b8a6; 
+  border: 4px solid #042f2e;
+}
+
+/* 📱 MOBILE */
+@media (max-width: 768px) {
+  .calendar { grid-template-columns: repeat(3, 1fr); }
+  .day-inner { font-size: 0.75rem; }
+  h1 { font-size: 1rem; }
+}
+
+@media (max-width: 430px) {
+  .calendar { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+
+<body>
+
+<div class="snow" id="snow"></div>
+
+<!-- PRESS START -->
+<div class="screen" id="startScreen">
+  <div class="start-text">PRESS START</div>
+</div>
+
+<!-- PASSWORD -->
+<div class="screen" id="passwordScreen" style="display:none;">
+  <div class="password-box">
+    <h3>DANI'S ALLERGY ?!</h3>
+    <input type="password" id="passwordInput">
+    <button onclick="checkPassword()">UNLOCK</button>
+    <p id="errorMsg">WRONG PASSWORD</p>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="wrapper" id="mainContent">
+  <h1>🎄 DANI'S ADVENT CALENDAR 💚</h1>
+  <div class="calendar" id="calendar"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="popup-card">
+    <button class="close-btn">CLOSE</button>
+    <div id="popupContent"></div>
+  </div>
+</div>
+
+<script>
+/* PASSWORD */
+const CORRECT_PASSWORD = "pineapples";
+
+const startScreen = document.getElementById("startScreen");
+const passwordScreen = document.getElementById("passwordScreen");
+
+startScreen.onclick = () => {
+  startScreen.style.display = "none";
+  passwordScreen.style.display = "flex";
+};
+
+function checkPassword() {
+  const input = document.getElementById("passwordInput").value;
+  const error = document.getElementById("errorMsg");
+  if (input === CORRECT_PASSWORD) {
+    passwordScreen.style.display = "none";
+    document.getElementById("mainContent").style.display = "block";
+  } else {
+    error.style.display = "block";
+  }
+}
+
+/* ❄️ Snow */
+const snow = document.getElementById("snow");
+for (let i = 0; i < 80; i++) {
+  const s = document.createElement("div");
+  s.className = "snowflake";
+  s.style.left = Math.random() * 100 + "vw";
+  s.style.animationDuration = 6 + Math.random() * 8 + "s";
+  s.style.animationDelay = Math.random() * -20 + "s";
+  snow.appendChild(s);
+}
+
+/* ✉️ LETTERS YOU CAN EDIT */
+const letters = [
+  "Day 1: Your first Christmas message 💖",
+  "Day 2: A cozy little reminder 🎄",
+  "Day 3: Something sweet just for you ✨",
+  "Day 4: Pixel hugs and warm thoughts 💕",
+  "Day 5: You make December brighter ❄️",
+  "Day 6: A small note full of love 💌",
+  "Day 7: You’re doing amazing 🌟",
+  "Day 8: Sending you comfort today ☕",
+  "Day 9: Another reason to smile 😊",
+  "Day 10: Christmas magic is close 🎅",
+  "Day 11: A quiet moment just for you 💭",
+  "Day 12: Halfway there 🎄",
+  "Day 13: Thank you for existing 💗",
+  "Day 14: Warm wishes always 🔔",
+  "Day 15: You are appreciated 💞",
+  "Day 16: Hope today feels gentle 🌙",
+  "Day 17: Almost Christmas 🎁",
+  "Day 18: A little joy for today ✨",
+  "Day 19: You matter so much 💖",
+  "Day 20: Cozy thoughts coming your way ❄️",
+  "Day 21: Christmas is near 🎄",
+  "Day 22: Just a reminder you’re loved 💕",
+  "Day 23: Tomorrow is special 🌟",
+  "Day 24: Merry Christmas 💝"
+];
+
+/* Calendar logic */
+const calendar = document.getElementById("calendar");
+const overlay = document.getElementById("overlay");
+const popupContent = document.getElementById("popupContent");
+
+letters.forEach((text, i) => {
+  const day = document.createElement("div");
+  day.className = "day";
+  day.innerHTML = `<div class="day-inner">${i + 1}</div>`;
+  day.onclick = () => {
+    popupContent.innerHTML = `<h3>DAY ${i + 1}</h3><p>${text}</p>`;
+    overlay.classList.add("active");
+  };
+  calendar.appendChild(day);
+});
+
+document.querySelector(".close-btn").onclick =
+overlay.onclick = e => {
+  if (e.target === overlay || e.target.classList.contains("close-btn")) {
+    overlay.classList.remove("active");
+  }
+};
+</script>
+
+</body>
+</html>
